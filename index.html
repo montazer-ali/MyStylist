@@ -2180,7 +2180,7 @@ document.getElementById('importBtn').addEventListener('click', ()=>{
       });
       added++;
     });
-
+ 
     await saveWardrobe();
     renderCloset();
     status.textContent = `✓ Imported ${added} item${added===1?'':'s'}${skipped ? `, skipped ${skipped} invalid entr${skipped===1?'y':'ies'}` : ''}`;
