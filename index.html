@@ -1,0 +1,2205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+<title>My Stylist</title>
+
+<!-- PWA / iOS home-screen app setup -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1b1917">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="My Stylist">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/icon-192.png">
+
+<script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
+<style>
+  :root{
+    --ink:#1b1917;
+    --ink-soft:#2b2825;
+    --paper:#efe9dd;
+    --paper-dim:#d9d0bd;
+    --brass:#b8944f;
+    --brass-bright:#d4ac66;
+    --pine:#3f4f3e;
+    --rust:#7c3f34;
+    --line: rgba(239,233,221,0.14);
+    --font-display: 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
+    --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-tag: 'Courier New', ui-monospace, monospace;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--ink);
+    color:var(--paper);
+    font-family:var(--font-body);
+    min-height:100vh;
+    min-height:100dvh;
+    -webkit-tap-highlight-color:transparent;
+    overscroll-behavior-y:none;
+  }
+  .wrap{
+    max-width:920px;
+    margin:0 auto;
+    padding:calc(28px + env(safe-area-inset-top)) calc(18px + env(safe-area-inset-right)) calc(80px + env(safe-area-inset-bottom)) calc(18px + env(safe-area-inset-left));
+  }
+
+  /* Header: closet rail */
+  header{
+    position:relative;
+    padding:18px 4px 26px;
+    margin-bottom:22px;
+    border-bottom:2px solid var(--brass);
+  }
+  header::before{
+    content:'';
+    position:absolute;
+    top:0;left:0;right:0;
+    height:2px;
+    background:linear-gradient(90deg, transparent, var(--brass) 15%, var(--brass) 85%, transparent);
+  }
+  h1{
+    font-family:var(--font-display);
+    font-weight:400;
+    font-size:2.1rem;
+    letter-spacing:0.02em;
+    margin:0 0 4px;
+    color:var(--paper);
+  }
+  h1 em{color:var(--brass-bright);font-style:normal;}
+  .sub{
+    font-family:var(--font-tag);
+    font-size:0.72rem;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--paper-dim);
+    opacity:0.7;
+  }
+
+  /* Tabs */
+  .tabs{display:flex;gap:6px;margin-bottom:22px;flex-wrap:wrap;}
+  .tab{
+    font-family:var(--font-tag);
+    font-size:0.72rem;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    background:transparent;
+    border:1px solid var(--line);
+    color:var(--paper-dim);
+    padding:9px 16px;
+    cursor:pointer;
+    border-radius:2px;
+    transition:all .15s ease;
+  }
+  .tab.active{
+    border-color:var(--brass);
+    color:var(--ink);
+    background:var(--brass);
+    font-weight:bold;
+  }
+  .tab:hover:not(.active){border-color:var(--brass-bright);color:var(--paper);}
+
+  section{display:none;}
+  section.active{display:block;}
+
+  /* Add form */
+  .card{
+    background:var(--ink-soft);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:20px;
+    margin-bottom:16px;
+  }
+  label.field{display:block;margin-bottom:14px;}
+  label.field span{
+    display:block;
+    font-family:var(--font-tag);
+    font-size:0.68rem;
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    color:var(--brass-bright);
+    margin-bottom:6px;
+  }
+  input[type=text], select, textarea{
+    width:100%;
+    background:var(--ink);
+    border:1px solid var(--line);
+    color:var(--paper);
+    padding:10px 12px;
+    font-family:var(--font-body);
+    font-size:0.92rem;
+    border-radius:2px;
+  }
+  input[type=text]:focus, select:focus, textarea:focus{outline:none;border-color:var(--brass);}
+  textarea{resize:vertical;min-height:44px;}
+
+  .row{display:flex;gap:12px;flex-wrap:wrap;}
+  .row > label.field{flex:1;min-width:140px;}
+
+  .photo-drop{
+    border:1.5px dashed var(--line);
+    border-radius:4px;
+    padding:22px;
+    text-align:center;
+    cursor:pointer;
+    margin-bottom:14px;
+    transition:border-color .15s;
+  }
+  .photo-drop:hover{border-color:var(--brass);}
+  .photo-drop img{max-width:160px;max-height:160px;border-radius:3px;display:block;margin:0 auto 8px;}
+  .photo-drop .hint{font-family:var(--font-tag);font-size:0.72rem;color:var(--paper-dim);opacity:0.7;}
+
+  .occasion-chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:2px;}
+  .chip{
+    font-family:var(--font-tag);
+    font-size:0.68rem;
+    letter-spacing:0.06em;
+    padding:6px 12px;
+    border:1px solid var(--line);
+    border-radius:20px;
+    cursor:pointer;
+    color:var(--paper-dim);
+    text-transform:uppercase;
+    user-select:none;
+  }
+  .chip.selected{background:var(--pine);border-color:var(--pine);color:var(--paper);}
+
+  button.primary{
+    background:var(--brass);
+    color:var(--ink);
+    border:none;
+    font-family:var(--font-tag);
+    font-weight:bold;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    font-size:0.78rem;
+    padding:12px 22px;
+    border-radius:2px;
+    cursor:pointer;
+    margin-top:4px;
+  }
+  button.primary:hover{background:var(--brass-bright);}
+  button.primary:disabled{opacity:0.4;cursor:default;}
+  button.ghost{
+    background:transparent;border:1px solid var(--line);color:var(--paper-dim);
+    font-family:var(--font-tag);font-size:0.68rem;letter-spacing:0.06em;text-transform:uppercase;
+    padding:7px 12px;border-radius:2px;cursor:pointer;
+  }
+  button.ghost:hover{border-color:var(--rust);color:var(--rust);}
+
+  /* Closet grid, garment-tag cards */
+  .closet-toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px;}
+  .closet-toolbar select{width:auto;}
+  .count{font-family:var(--font-tag);font-size:0.72rem;color:var(--paper-dim);opacity:0.7;}
+
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(150px,1fr));
+    gap:14px;
+  }
+#closetGrid .item{cursor:pointer;}
+  .item{
+    background:var(--ink-soft);
+    border:1px solid var(--line);
+    border-radius:4px;
+    overflow:hidden;
+    position:relative;
+  }
+  .item .thumb{width:100%;aspect-ratio:1;object-fit:cover;background:#000;display:block;}
+  .item .tag{
+    padding:9px 10px 11px;
+    position:relative;
+  }
+  .item .tag::before{
+    content:'';
+    position:absolute;top:0;left:10px;right:10px;
+    border-top:1px dashed var(--line);
+  }
+  .item-name{font-size:0.86rem;font-weight:600;margin-bottom:2px;color:var(--paper);}
+  .item-meta{font-family:var(--font-tag);font-size:0.65rem;color:var(--brass-bright);letter-spacing:0.05em;text-transform:uppercase;}
+  .item-remove{
+    position:absolute;top:6px;right:6px;
+    width:22px;height:22px;border-radius:50%;
+    background:rgba(27,25,23,0.75);color:var(--paper);
+    border:none;cursor:pointer;font-size:0.85rem;line-height:1;
+  }
+  .item-remove:hover{background:var(--rust);}
+
+  .empty{
+    text-align:center;padding:50px 20px;color:var(--paper-dim);opacity:0.6;
+    font-family:var(--font-tag);font-size:0.8rem;letter-spacing:0.06em;
+  }
+
+  /* Outfit suggestion */
+  .outfit-result{margin-top:20px;}
+  .outfit-occasion-label{
+    font-family:var(--font-display);
+    font-size:1.3rem;
+    color:var(--brass-bright);
+    margin-bottom:4px;
+  }
+  .outfit-note{color:var(--paper-dim);font-size:0.9rem;line-height:1.55;margin-bottom:18px;}
+  .board{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(130px,1fr));
+    gap:14px;
+    margin-bottom:16px;
+  }
+  .board .item{border-color:var(--brass);}
+  .why{
+    font-size:0.82rem;color:var(--paper-dim);line-height:1.5;
+    background:var(--ink-soft);border-left:2px solid var(--brass);
+    padding:10px 14px;border-radius:0 3px 3px 0;
+  }
+  .loading{
+    display:flex;align-items:center;gap:10px;color:var(--paper-dim);
+    font-family:var(--font-tag);font-size:0.78rem;letter-spacing:0.06em;
+    padding:20px 0;
+  }
+  .spinner{
+    width:16px;height:16px;border-radius:50%;
+    border:2px solid var(--line);border-top-color:var(--brass);
+    animation:spin 0.8s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .error-box{
+    background:rgba(124,63,52,0.15);border:1px solid var(--rust);
+    color:var(--paper);padding:12px 14px;border-radius:3px;font-size:0.85rem;
+  }
+
+  /* Phone-sized screens: bigger tap targets, no accidental zoom on inputs, comfortable spacing */
+  @media (max-width: 480px){
+    .tabs{gap:8px;}
+    .tab{padding:12px 14px;font-size:0.74rem;flex:1 1 auto;text-align:center;}
+    .chip{padding:9px 14px;font-size:0.72rem;}
+    input[type=text], select, textarea{padding:13px 14px;font-size:1rem;} /* 16px avoids iOS auto-zoom-on-focus */
+    button.primary{padding:15px 22px;font-size:0.8rem;}
+    button.ghost{padding:11px 14px;min-height:40px;}
+    .grid{grid-template-columns:repeat(auto-fill, minmax(130px,1fr));gap:11px;}
+    h1{font-size:1.75rem;}
+    .card{padding:16px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>My <em>Stylist</em></h1>
+    <div class="sub">Catalog once · Style forever</div>
+  </header>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="closet">Closet</button>
+    <button class="tab" data-tab="add">Add Item</button>
+    <button class="tab" data-tab="outfit">Get Outfit</button>
+    <button class="tab" data-tab="settings">Settings</button>
+  </div>
+
+  <!-- SETTINGS -->
+  <section id="settings">
+    <div class="card">
+      <div class="item-name" style="font-size:1rem;margin-bottom:8px;">Gemini API key</div>
+      <div style="color:var(--paper-dim);font-size:0.85rem;line-height:1.55;margin-bottom:14px;">
+        This app runs standalone in your browser, so it needs your own Google Gemini API key to recognize photos
+        and suggest outfits. Get a free key at
+        <a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--brass-bright);">aistudio.google.com/apikey</a>.
+        The key is stored only in this browser (localStorage) and sent directly from your browser to Google —
+        it never passes through any other server. Don't share this file with the key already saved in it,
+        and don't use this on a shared/public computer.
+      </div>
+      <label class="field">
+        <span>API key</span>
+        <input type="text" id="apiKeyInput" placeholder="AIza...">
+      </label>
+      <button class="primary" id="saveKeyBtn">Save key</button>
+      <div id="keyStatus" style="margin-top:10px;font-family:var(--font-tag);font-size:0.75rem;color:var(--brass-bright);"></div>
+    </div>
+
+    <div class="card">
+      <div class="item-name" style="font-size:1rem;margin-bottom:8px;">Your photo</div>
+      <div style="color:var(--paper-dim);font-size:0.85rem;line-height:1.55;margin-bottom:14px;">
+        Add a clear photo of yourself (face and body visible, plain background works best) and outfit
+        suggestions can include a generated picture of you wearing the look. Stored only in this browser,
+        same as everything else.
+      </div>
+      <div class="photo-drop" id="myPhotoDrop" style="margin-bottom:12px;">
+        <div id="myPhotoPreviewWrap">
+          <div class="hint">Tap to add your photo</div>
+        </div>
+      </div>
+      <input type="file" id="myPhotoInput" accept="image/*,.heic,.heif,.avif" style="display:none">
+      <button class="ghost" id="removeMyPhotoBtn" style="display:none;">Remove photo</button>
+      <div id="myPhotoStatus" style="margin-top:8px;font-family:var(--font-tag);font-size:0.75rem;color:var(--brass-bright);"></div>
+    </div>
+
+    <div class="card">
+      <div class="item-name" style="font-size:1rem;margin-bottom:8px;">Backup your closet</div>
+      <div style="color:var(--paper-dim);font-size:0.85rem;line-height:1.55;margin-bottom:14px;">
+        Your closet stays saved on this device automatically between sessions. Use
+        <strong>Export</strong> to keep a backup file or move your closet to another device, and
+        <strong>Import</strong> to bring one back in — photos included.
+      </div>
+
+      <div class="item-meta" style="margin-bottom:8px;">Export</div>
+      <button class="ghost" id="exportBtn">Export closet to file</button>
+      <div id="exportStatus" style="margin-top:8px;font-family:var(--font-tag);font-size:0.75rem;color:var(--brass-bright);"></div>
+
+      <div style="border-top:1px dashed var(--line);margin:20px 0 16px;"></div>
+
+      <div class="item-meta" style="margin-bottom:8px;">Import</div>
+      <label class="field">
+        <span>Closet backup file</span>
+        <input type="file" id="importFileInput" accept="application/json,.json">
+      </label>
+      <button class="primary" id="importBtn">Import closet from file</button>
+      <div id="importStatus" style="margin-top:8px;font-family:var(--font-tag);font-size:0.75rem;color:var(--brass-bright);"></div>
+    </div>
+  </section>
+
+  <!-- ADD ITEM -->
+  <section id="add">
+    <div class="card">
+      <div class="photo-drop" id="photoDrop">
+        <div id="photoPreviewWrap">
+          <div class="hint">Tap to choose photos — Gemini fills in the rest</div>
+        </div>
+      </div>
+      <input type="file" id="photoInput" accept="image/*,.heic,.heif,.avif" multiple style="display:none">
+      <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none">
+      <input type="file" id="folderInput" accept="image/*,.heic,.heif,.avif" webkitdirectory directory multiple style="display:none">
+
+      <div style="display:flex;gap:10px;margin-top:12px;">
+        <button class="primary" id="cameraBtn" style="flex:1;">📷 Take Photo</button>
+        <button class="ghost" id="libraryBtn" style="flex:1;">Choose from Library</button>
+      </div>
+      <div style="text-align:center;margin-top:10px;">
+        <button class="ghost" id="folderPickBtn">Or choose a whole folder (desktop only)</button>
+      </div>
+
+      <div id="addStatus" style="margin:10px 0 4px;font-family:var(--font-tag);font-size:0.75rem;color:var(--brass-bright);"></div>
+      <div id="addModelInfo" style="margin:0 0 4px;font-family:var(--font-tag);font-size:0.65rem;letter-spacing:0.05em;color:var(--paper-dim);opacity:0.65;"></div>
+
+      <!-- Shown automatically after a successful auto-detect -->
+      <div id="detectedCard" style="display:none;margin-top:10px;">
+        <div class="item-name" id="detName" style="font-size:1rem;"></div>
+        <div class="item-meta" id="detMeta" style="margin:3px 0 4px;"></div>
+        <div class="occasion-chips" id="detOccasions"></div>
+        <button class="ghost" id="fixDetailsBtn" style="margin-top:12px;">Fix details</button>
+      </div>
+
+      <!-- Manual / correction fields — hidden unless auto-detect fails or user taps "Fix details" -->
+      <div id="detailsForm" style="display:none;margin-top:14px;">
+        <div class="row">
+          <label class="field">
+            <span>Category</span>
+            <select id="fCategory">
+              <option>Shirt</option>
+              <option>T-Shirt</option>
+              <option>Pants</option>
+              <option>Shorts</option>
+              <option>Jacket/Outerwear</option>
+              <option>Shoes</option>
+              <option>Watch</option>
+              <option>Accessory</option>
+              <option>Other</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Color</span>
+            <input type="text" id="fColor" placeholder="e.g. navy, olive, white">
+          </label>
+        </div>
+
+        <label class="field">
+          <span>Name / description</span>
+          <input type="text" id="fName" placeholder="e.g. Charcoal wool blazer">
+        </label>
+
+        <label class="field">
+          <span>Brand (optional)</span>
+          <input type="text" id="fBrand" placeholder="e.g. Patagonia">
+        </label>
+
+        <label class="field">
+          <span>Good for</span>
+          <div class="occasion-chips" id="occasionChips">
+            <div class="chip" data-val="Work">Work</div>
+            <div class="chip" data-val="Casual">Casual</div>
+            <div class="chip" data-val="Date Night">Date Night</div>
+            <div class="chip" data-val="Formal">Formal</div>
+            <div class="chip" data-val="Gym/Athletic">Gym/Athletic</div>
+            <div class="chip" data-val="Travel">Travel</div>
+            <div class="chip" data-val="Outdoor">Outdoor</div>
+          </div>
+        </label>
+
+        <label class="field">
+          <span>Notes (optional)</span>
+          <textarea id="fNotes" placeholder="anything worth remembering — fit, fabric, when you bought it..."></textarea>
+        </label>
+
+        <button class="primary" id="saveItemBtn">Save item</button>
+      </div>
+    </div>
+
+    <div id="recentAddedWrap" style="display:none;">
+      <div class="item-meta" style="margin:18px 0 8px;">Just added this session</div>
+      <div class="grid" id="recentAddedGrid"></div>
+    </div>
+  </section>
+
+  <!-- CLOSET -->
+  <section id="closet" class="active">
+    <div class="closet-toolbar">
+      <select id="filterCategory">
+        <option value="">All categories</option>
+      </select>
+      <select id="sortBy">
+        <option value="added">Date Added</option>
+        <option value="modified">Date Modified</option>
+        <option value="name">Name</option>
+        <option value="category">Category</option>
+        <option value="color">Color</option>
+        <option value="brand">Brand</option>
+        <option value="material">Material</option>
+      </select>
+      <select id="sortOrder">
+        <option value="desc">Descending</option>
+        <option value="asc">Ascending</option>
+      </select>
+      <div class="count" id="itemCount"></div>
+    </div>
+    <div class="grid" id="closetGrid"></div>
+  </section>
+
+  <!-- EDIT ITEM MODAL -->
+  <!-- IMAGE LIGHTBOX -->
+  <div id="lightboxOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:60;align-items:center;justify-content:center;overflow:hidden;touch-action:none;">
+    <div id="lightboxControls" style="position:absolute;top:14px;right:14px;display:flex;gap:8px;z-index:61;">
+      <button class="ghost" id="zoomOutBtn" style="width:38px;height:38px;padding:0;font-size:1.1rem;">−</button>
+      <button class="ghost" id="zoomInBtn" style="width:38px;height:38px;padding:0;font-size:1.1rem;">+</button>
+      <button class="ghost" id="lightboxCloseBtn" style="width:38px;height:38px;padding:0;font-size:1rem;">×</button>
+    </div>
+    <div id="lightboxHint" style="position:absolute;bottom:14px;left:0;right:0;text-align:center;font-family:var(--font-tag);font-size:0.68rem;letter-spacing:0.06em;color:var(--paper-dim);opacity:0.6;pointer-events:none;">scroll or pinch to zoom · drag to pan · double-tap to reset</div>
+    <img id="lightboxImg" style="max-width:90vw;max-height:90vh;border-radius:4px;box-shadow:0 8px 40px rgba(0,0,0,0.5);cursor:grab;user-select:none;-webkit-user-select:none;touch-action:none;">
+  </div>
+
+  <div id="editModalOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:50;align-items:center;justify-content:center;padding:16px;">
+    <div class="card" style="max-width:440px;width:100%;max-height:88vh;overflow-y:auto;margin-bottom:0;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;">
+        <div class="item-name" style="font-size:1.05rem;">Edit item</div>
+        <button class="ghost" id="closeEditModalBtn" style="padding:4px 10px;">Close</button>
+      </div>
+
+      <img id="editPhoto" style="width:100%;max-width:220px;border-radius:4px;display:block;margin:0 auto 10px;cursor:zoom-in;">
+      <div style="text-align:center;margin-bottom:16px;">
+        <button class="ghost" id="reanalyzeBtn">Re-run AI on this photo</button>
+      </div>
+
+      <div class="row">
+        <label class="field">
+          <span>Category</span>
+          <select id="eCategory">
+            <option>Shirt</option>
+            <option>T-Shirt</option>
+            <option>Pants</option>
+            <option>Shorts</option>
+            <option>Jacket/Outerwear</option>
+            <option>Shoes</option>
+            <option>Watch</option>
+            <option>Accessory</option>
+            <option>Other</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Color</span>
+          <input type="text" id="eColor" placeholder="e.g. navy, olive, white">
+        </label>
+      </div>
+
+      <label class="field">
+        <span>Name / description</span>
+        <input type="text" id="eName" placeholder="e.g. Charcoal wool blazer">
+      </label>
+
+      <label class="field">
+        <span>Brand (optional)</span>
+        <input type="text" id="eBrand" placeholder="e.g. Patagonia">
+      </label>
+
+      <label class="field">
+        <span>Good for</span>
+        <div class="occasion-chips" id="eOccasionChips">
+          <div class="chip" data-val="Work">Work</div>
+          <div class="chip" data-val="Casual">Casual</div>
+          <div class="chip" data-val="Date Night">Date Night</div>
+          <div class="chip" data-val="Formal">Formal</div>
+          <div class="chip" data-val="Gym/Athletic">Gym/Athletic</div>
+          <div class="chip" data-val="Travel">Travel</div>
+          <div class="chip" data-val="Outdoor">Outdoor</div>
+        </div>
+      </label>
+
+      <label class="field">
+        <span>Notes (optional)</span>
+        <textarea id="eNotes" placeholder="anything worth remembering — fit, fabric, when you bought it..."></textarea>
+      </label>
+
+      <div style="display:flex;gap:10px;margin-top:6px;flex-wrap:wrap;">
+        <button class="primary" id="saveEditBtn">Save changes</button>
+        <button class="ghost" id="deleteEditBtn" style="margin-left:auto;">Delete item</button>
+      </div>
+      <div id="editStatus" style="margin-top:10px;font-family:var(--font-tag);font-size:0.75rem;color:var(--brass-bright);"></div>
+      <div id="editModelInfo" style="margin-top:4px;font-family:var(--font-tag);font-size:0.65rem;letter-spacing:0.05em;color:var(--paper-dim);opacity:0.65;"></div>
+    </div>
+  </div>
+
+  <!-- OUTFIT -->
+  <section id="outfit">
+    <div class="card">
+      <label class="field">
+        <span>What's the occasion?</span>
+        <input type="text" id="occasionInput" placeholder="e.g. dinner date, client meeting, weekend hike, wedding">
+      </label>
+      <div class="occasion-chips" id="occasionPresets">
+        <div class="chip" data-val="Work day at the office">Work</div>
+        <div class="chip" data-val="Casual weekend">Casual</div>
+        <div class="chip" data-val="Date night dinner">Date Night</div>
+        <div class="chip" data-val="Formal event">Formal</div>
+        <div class="chip" data-val="Gym / workout">Gym</div>
+        <div class="chip" data-val="Travel day / flight">Travel</div>
+        <div class="chip" data-val="Outdoor activity">Outdoor</div>
+      </div>
+      <button class="primary" id="suggestBtn" style="margin-top:14px;">Suggest an outfit</button>
+    </div>
+
+    <div class="card">
+      <div class="item-name" style="font-size:1rem;margin-bottom:4px;">Or match an item you have a photo of</div>
+      <div style="color:var(--paper-dim);font-size:0.85rem;line-height:1.5;margin-bottom:14px;">
+        Snap or upload a photo of something — a shirt you're considering, a pair of shoes at the store —
+        and see what in your closet would pair with it.
+      </div>
+
+      <div class="photo-drop" id="matchPhotoDrop">
+        <div id="matchPhotoPreviewWrap">
+          <div class="hint">Tap to add a photo of the item</div>
+        </div>
+      </div>
+      <input type="file" id="matchPhotoInput" accept="image/*,.heic,.heif,.avif" style="display:none">
+      <input type="file" id="matchCameraInput" accept="image/*" capture="environment" style="display:none">
+
+      <div style="display:flex;gap:10px;margin-top:12px;">
+        <button class="primary" id="matchCameraBtn" style="flex:1;">📷 Take Photo</button>
+        <button class="ghost" id="matchLibraryBtn" style="flex:1;">Choose from Library</button>
+      </div>
+
+      <div id="matchItemStatus" style="margin:10px 0 4px;font-family:var(--font-tag);font-size:0.75rem;color:var(--brass-bright);"></div>
+      <div id="matchModelInfo" style="margin:0 0 8px;font-family:var(--font-tag);font-size:0.65rem;letter-spacing:0.05em;color:var(--paper-dim);opacity:0.65;"></div>
+
+      <div id="matchDetectedCard" style="display:none;">
+        <div class="item-name" id="matchDetName" style="font-size:0.95rem;"></div>
+        <div class="item-meta" id="matchDetMeta" style="margin:3px 0 10px;"></div>
+        <button class="primary" id="findMatchBtn" style="width:100%;">Find a matching outfit</button>
+      </div>
+    </div>
+
+    <div class="outfit-result" id="outfitResult"></div>
+  </section>
+</div>
+
+<script>
+const CATEGORIES = ["Shirt","T-Shirt","Pants","Shorts","Jacket/Outerwear","Shoes","Watch","Accessory","Other"];
+const OCCASIONS = ["Work","Casual","Date Night","Formal","Gym/Athletic","Travel","Outdoor"];
+
+// The model sometimes returns a near-miss label ("T-shirt", "Tee", "Sneakers", "Coat")
+// instead of an exact match to one of the 9 dropdown categories. Without this, any
+// mismatch silently collapsed to "Other" — which broke same-category exclusion in the
+// "match an item" feature, since nothing in a real closet is tagged "Other".
+const CATEGORY_ALIASES = {
+  'tshirt':'T-Shirt', 'tee':'T-Shirt', 't shirt':'T-Shirt',
+  'top':'Shirt', 'blouse':'Shirt', 'polo':'Shirt', 'sweater':'Shirt', 'pullover':'Shirt', 'hoodie':'Shirt',
+  'trousers':'Pants', 'jeans':'Pants', 'slacks':'Pants', 'chinos':'Pants',
+  'short':'Shorts',
+  'jacket':'Jacket/Outerwear', 'coat':'Jacket/Outerwear', 'outerwear':'Jacket/Outerwear', 'blazer':'Jacket/Outerwear', 'overcoat':'Jacket/Outerwear', 'parka':'Jacket/Outerwear',
+  'shoe':'Shoes', 'sneaker':'Shoes', 'sneakers':'Shoes', 'boots':'Shoes', 'boot':'Shoes', 'sandals':'Shoes', 'sandal':'Shoes', 'heels':'Shoes', 'loafers':'Shoes',
+  'watches':'Watch', 'timepiece':'Watch',
+  'accessories':'Accessory', 'belt':'Accessory', 'bag':'Accessory', 'scarf':'Accessory', 'hat':'Accessory', 'tie':'Accessory', 'jewelry':'Accessory', 'sunglasses':'Accessory'
+};
+
+function normalizeCategory(raw){
+  if(!raw) return 'Other';
+  const trimmed = raw.toString().trim();
+  // Exact match first (case-insensitive)
+  const exact = CATEGORIES.find(c => c.toLowerCase() === trimmed.toLowerCase());
+  if(exact) return exact;
+  // Alias lookup (case-insensitive, ignoring plural 's' where helpful)
+  const lower = trimmed.toLowerCase();
+  if(CATEGORY_ALIASES[lower]) return CATEGORY_ALIASES[lower];
+  const singular = lower.endsWith('s') ? lower.slice(0,-1) : lower;
+  if(CATEGORY_ALIASES[singular]) return CATEGORY_ALIASES[singular];
+  return 'Other';
+}
+let wardrobe = [];
+let currentPhotoBase64 = null;
+let matchItemPhoto = null;
+let matchItemFields = null;
+let selectedAddOccasions = new Set();
+let selectedOutfitOccasion = null;
+
+// ---------- API key (standalone mode, Gemini) ----------
+function getApiKey(){
+  return localStorage.getItem('closet-gemini-key') || '';
+}
+document.getElementById('saveKeyBtn').addEventListener('click', ()=>{
+  const key = document.getElementById('apiKeyInput').value.trim();
+  const status = document.getElementById('keyStatus');
+  if(!key){ status.textContent = 'Paste a key first.'; return; }
+  localStorage.setItem('closet-gemini-key', key);
+  status.textContent = '✓ Key saved in this browser';
+});
+(function initKeyField(){
+  const existing = getApiKey();
+  if(existing) document.getElementById('apiKeyInput').value = existing;
+})();
+
+// Free-tier text models, tried in order — if one is rate-limited or its daily quota
+// is used up, the next one is tried automatically rather than failing outright.
+const GEMINI_TEXT_MODEL_CANDIDATES = [
+  "gemini-3.6-flash",
+  "gemini-3.5-flash",
+  "gemini-3.1-flash-lite",
+  "gemini-2.5-flash",
+  "gemini-2.5-flash-lite"
+];
+function geminiUrl(modelId){
+  return `https://generativelanguage.googleapis.com/v1beta/models/${modelId || GEMINI_TEXT_MODEL_CANDIDATES[0]}:generateContent?key=${encodeURIComponent(getApiKey())}`;
+}
+
+// Calls the Gemini text API, automatically falling through the model list above if a
+// model is rate-limited (429) or its quota is exhausted. Returns {response, data} from
+// the first model that answers, or throws the last error if every model failed.
+async function callGeminiTextWithFallback(bodyObj, onAttempt){
+  let lastErr = null;
+  // Matches any transient/capacity-style failure worth retrying on the next free model —
+  // not just explicit rate-limit/quota errors, but server overload ("high demand",
+  // "overloaded", 503 UNAVAILABLE) too, since those are just as recoverable by switching models.
+  const RETRYABLE = /quota|rate.?limit|resource.?exhausted|high demand|overloaded?|unavailable|try again later|503|fetch/i;
+
+  for(const modelId of GEMINI_TEXT_MODEL_CANDIDATES){
+    if(onAttempt){ try{ onAttempt(modelId); }catch(e){} }
+    try{
+      const response = await fetch(geminiUrl(modelId), {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify(bodyObj)
+      });
+
+      if(response.status === 429 || response.status === 503){
+        const errBody = await response.clone().json().catch(()=>null);
+        lastErr = new Error((errBody && errBody.error && errBody.error.message) || `${modelId}: HTTP ${response.status}`);
+        continue; // try the next free model
+      }
+
+      const data = await response.json();
+      if(!response.ok || data.error){
+        const msg = (data && data.error && data.error.message) ? data.error.message : `HTTP ${response.status}`;
+        if(RETRYABLE.test(msg)){
+          lastErr = new Error(`${modelId}: ${msg}`);
+          continue;
+        }
+        throw new Error(msg);
+      }
+      return { data, modelId };
+    }catch(err){
+      lastErr = err;
+      if(!RETRYABLE.test(err.message || '')) throw err;
+      // otherwise keep trying the next candidate
+    }
+  }
+  throw lastErr || new Error('All free-tier models are currently unavailable');
+}
+
+let cachedImageModels = null;
+async function discoverImageModels(){
+  if(cachedImageModels) return cachedImageModels;
+  try{
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(getApiKey())}`);
+    const data = await res.json();
+    const models = (data.models || [])
+      .filter(m => (m.supportedGenerationMethods||[]).includes('generateContent'))
+      .filter(m => /image/i.test(m.name))
+      .map(m => m.name.replace('models/',''));
+    cachedImageModels = models.length ? models : ["gemini-2.5-flash-image", "gemini-3.1-flash-image", "gemini-2.5-flash-image-preview"];
+  }catch(err){
+    console.error('Could not list available models, falling back to guesses', err);
+    cachedImageModels = ["gemini-2.5-flash-image", "gemini-3.1-flash-image", "gemini-2.5-flash-image-preview"];
+  }
+  return cachedImageModels;
+}
+function geminiImageUrl(modelId){
+  return `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${encodeURIComponent(getApiKey())}`;
+}
+
+// ---------- Storage (IndexedDB — much larger quota than localStorage, avoids
+// silent save failures once your closet has more than a few photos in it) ----------
+const IDB_NAME = 'closet-db';
+const IDB_STORE = 'kv';
+let idbPromise = null;
+
+function idbOpen(){
+  if(idbPromise) return idbPromise;
+  idbPromise = new Promise((resolve, reject)=>{
+    const req = indexedDB.open(IDB_NAME, 1);
+    req.onupgradeneeded = ()=>{
+      const db = req.result;
+      if(!db.objectStoreNames.contains(IDB_STORE)){
+        db.createObjectStore(IDB_STORE);
+      }
+    };
+    req.onsuccess = ()=> resolve(req.result);
+    req.onerror = ()=> reject(req.error);
+  });
+  return idbPromise;
+}
+
+async function idbGet(key){
+  const db = await idbOpen();
+  return new Promise((resolve, reject)=>{
+    const tx = db.transaction(IDB_STORE, 'readonly');
+    const req = tx.objectStore(IDB_STORE).get(key);
+    req.onsuccess = ()=> resolve(req.result);
+    req.onerror = ()=> reject(req.error);
+  });
+}
+
+async function idbSet(key, value){
+  const db = await idbOpen();
+  return new Promise((resolve, reject)=>{
+    const tx = db.transaction(IDB_STORE, 'readwrite');
+    tx.objectStore(IDB_STORE).put(value, key);
+    tx.oncomplete = ()=> resolve();
+    tx.onerror = ()=> reject(tx.error);
+  });
+}
+
+async function idbDelete(key){
+  const db = await idbOpen();
+  return new Promise((resolve, reject)=>{
+    const tx = db.transaction(IDB_STORE, 'readwrite');
+    tx.objectStore(IDB_STORE).delete(key);
+    tx.oncomplete = ()=> resolve();
+    tx.onerror = ()=> reject(tx.error);
+  });
+}
+
+// One-time migration: if IndexedDB is empty but old localStorage data exists
+// (from before this fix), pull it over automatically so nobody loses their closet.
+async function migrateFromLocalStorageIfNeeded(){
+  try{
+    const existing = await idbGet('wardrobe-items');
+    if(existing === undefined){
+      const oldWardrobe = localStorage.getItem('wardrobe-items');
+      if(oldWardrobe){
+        await idbSet('wardrobe-items', oldWardrobe);
+        localStorage.removeItem('wardrobe-items');
+      }
+    }
+    const existingPhoto = await idbGet('closet-my-photo');
+    if(existingPhoto === undefined){
+      const oldPhoto = localStorage.getItem('closet-my-photo');
+      if(oldPhoto){
+        await idbSet('closet-my-photo', oldPhoto);
+        localStorage.removeItem('closet-my-photo');
+      }
+    }
+  }catch(e){
+    console.error('Migration from localStorage failed (safe to ignore on first-ever install)', e);
+  }
+}
+
+async function loadWardrobe(){
+  await migrateFromLocalStorageIfNeeded();
+  try{
+    const raw = await idbGet('wardrobe-items');
+    wardrobe = raw ? JSON.parse(raw) : [];
+  }catch(e){
+    console.error('Load failed', e);
+    wardrobe = [];
+  }
+  renderCloset();
+  renderMyPhotoPreview();
+}
+
+async function saveWardrobe(){
+  try{
+    await idbSet('wardrobe-items', JSON.stringify(wardrobe));
+  }catch(e){
+    console.error('Storage save failed', e);
+    const status = document.getElementById('addStatus');
+    if(status) status.textContent = 'Could not save — your device storage may be full.';
+  }
+}
+
+// ---------- Your reference photo (for outfit preview images) ----------
+async function getMyPhoto(){
+  try{
+    return (await idbGet('closet-my-photo')) || '';
+  }catch(e){
+    return '';
+  }
+}
+async function renderMyPhotoPreview(){
+  const wrap = document.getElementById('myPhotoPreviewWrap');
+  const removeBtn = document.getElementById('removeMyPhotoBtn');
+  const photo = await getMyPhoto();
+  if(photo){
+    wrap.innerHTML = `<img src="${photo}"><div class="hint">Tap to replace</div>`;
+    removeBtn.style.display = 'inline-block';
+  }else{
+    wrap.innerHTML = `<div class="hint">Tap to add your photo</div>`;
+    removeBtn.style.display = 'none';
+  }
+}
+document.getElementById('myPhotoDrop').addEventListener('click', ()=>document.getElementById('myPhotoInput').click());
+document.getElementById('myPhotoInput').addEventListener('change', async (e)=>{
+  const file = e.target.files[0];
+  const status = document.getElementById('myPhotoStatus');
+  if(!file) return;
+  status.textContent = 'Saving...';
+  try{
+    const base64 = await resizeFileToBase64(file, 1024, 0.88);
+    await idbSet('closet-my-photo', base64);
+    await renderMyPhotoPreview();
+    status.textContent = '✓ Saved';
+  }catch(err){
+    console.error(err);
+    status.textContent = "Couldn't read that photo — try a different one.";
+  }
+  document.getElementById('myPhotoInput').value = '';
+});
+document.getElementById('removeMyPhotoBtn').addEventListener('click', async ()=>{
+  await idbDelete('closet-my-photo');
+  await renderMyPhotoPreview();
+  document.getElementById('myPhotoStatus').textContent = 'Removed.';
+});
+
+// ---------- Tabs ----------
+document.querySelectorAll('.tab').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('section').forEach(s=>s.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.tab).classList.add('active');
+  });
+});
+
+// ---------- Add item: photo capture + resize + auto-catalog ----------
+let lastAddedItemId = null;   // item Gemini just auto-saved, in case it needs fixing
+let editingExistingId = null; // set when the details form is correcting an existing item
+
+document.getElementById('photoDrop').addEventListener('click', ()=>document.getElementById('photoInput').click());
+document.getElementById('photoInput').addEventListener('change', (e)=> handleFileBatch(e.target.files));
+
+document.getElementById('libraryBtn').addEventListener('click', ()=>document.getElementById('photoInput').click());
+
+document.getElementById('cameraBtn').addEventListener('click', ()=>document.getElementById('cameraInput').click());
+document.getElementById('cameraInput').addEventListener('change', (e)=> handleFileBatch(e.target.files));
+
+document.getElementById('folderPickBtn').addEventListener('click', ()=>document.getElementById('folderInput').click());
+document.getElementById('folderInput').addEventListener('change', (e)=> handleFileBatch(e.target.files));
+
+function isHeic(file){
+  const type = (file.type || '').toLowerCase();
+  const name = (file.name || '').toLowerCase();
+  return type.includes('heic') || type.includes('heif') || name.endsWith('.heic') || name.endsWith('.heif');
+}
+
+async function resizeFileToBase64(file, maxDim=720, quality=0.82){
+  let sourceBlob = file;
+
+  if(isHeic(file) && typeof heic2any === 'function'){
+    try{
+      const converted = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.9 });
+      sourceBlob = Array.isArray(converted) ? converted[0] : converted;
+    }catch(err){
+      console.error('HEIC conversion failed, will try other paths', err);
+      sourceBlob = file; // fall through to native decode / raw bytes below
+    }
+  }
+
+  // Try to decode + resize (works for the converted blob, or natively for jpg/png/webp/avif,
+  // and for HEIC on browsers — like Safari — that can display it without any library).
+  try{
+    return await decodeAndResize(sourceBlob, maxDim, quality);
+  }catch(err){
+    console.error('Decode/resize failed, falling back to raw file bytes', err);
+  }
+
+  // Last resort: use the raw original file exactly as-is, unresized and unconverted.
+  // This basically never fails — it just reads the file's bytes — so a photo should
+  // essentially always make it into the closet, even if it can't be previewed nicely.
+  try{
+    return await readFileAsDataUrl(file);
+  }catch(err){
+    throw new Error('Could not read that file at all');
+  }
+}
+
+function decodeAndResize(blob, maxDim=560, quality=0.72){
+  return new Promise((resolve, reject)=>{
+    const img = new Image();
+    const reader = new FileReader();
+    reader.onload = (ev)=>{
+      img.onload = ()=>{
+        let w = img.width, h = img.height;
+        if(w > h && w > maxDim){ h = h*(maxDim/w); w = maxDim; }
+        else if(h >= w && h > maxDim){ w = w*(maxDim/h); h = maxDim; }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img,0,0,w,h);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = ()=>reject(new Error('Could not decode that image'));
+      img.src = ev.target.result;
+    };
+    reader.onerror = ()=>reject(new Error('Could not read file'));
+    reader.readAsDataURL(blob);
+  });
+}
+
+function readFileAsDataUrl(file){
+  return new Promise((resolve, reject)=>{
+    const reader = new FileReader();
+    reader.onload = (ev)=>resolve(ev.target.result);
+    reader.onerror = ()=>reject(new Error('Could not read that file at all'));
+    reader.readAsDataURL(file);
+  });
+}
+
+let batchProcessing = false;
+let batchTotal = 0;
+
+function addToRecentTable(item){
+  const wrap = document.getElementById('recentAddedWrap');
+  const grid = document.getElementById('recentAddedGrid');
+  wrap.style.display = 'block';
+  const card = document.createElement('div');
+  card.className = 'item';
+  card.dataset.id = item.id;
+  card.innerHTML = `
+    <img class="thumb" src="${item.photo}">
+    <div class="tag">
+      <div class="item-name">${escapeHtml(item.name)}</div>
+      <div class="item-meta">${[item.category, item.color, item.brand].filter(Boolean).map(escapeHtml).join(' · ')}</div>
+    </div>
+  `;
+  card.addEventListener('click', ()=>{
+    const current = wardrobe.find(i=>i.id===item.id);
+    if(current) openEditModal(current);
+  });
+  grid.prepend(card);
+}
+
+function looksLikeImage(f){
+  if(f.type && f.type.startsWith('image/')) return true;
+  const name = (f.name || '').toLowerCase();
+  return ['.heic','.heif','.avif','.jpg','.jpeg','.png','.webp','.gif','.bmp'].some(ext => name.endsWith(ext));
+}
+
+async function handleFileBatch(fileList){
+  if(batchProcessing){
+    document.getElementById('addStatus').textContent = 'Still working through the last batch — one moment.';
+    return;
+  }
+  const files = Array.from(fileList || []).filter(looksLikeImage);
+  if(files.length === 0){
+    document.getElementById('addStatus').textContent = 'No image files found in that selection.';
+    return;
+  }
+
+  batchProcessing = true;
+  batchTotal = files.length;
+  document.getElementById('detectedCard').style.display = 'none';
+  document.getElementById('detailsForm').style.display = 'none';
+  editingExistingId = null;
+
+  const status = document.getElementById('addStatus');
+  const total = files.length;
+  let done = 0;
+  let succeeded = 0;
+  let skipped = 0;
+
+  try{
+    for(const file of files){
+      done++;
+      try{
+        const base64 = await resizeFileToBase64(file);
+        currentPhotoBase64 = base64;
+        document.getElementById('photoPreviewWrap').innerHTML =
+          `<img src="${base64}"><div class="hint">Recognizing item ${done} of ${total}...</div>`;
+        status.textContent = `Processing ${done} of ${total}...`;
+        document.getElementById('addModelInfo').textContent = '';
+
+        let analysisBase64 = base64;
+        try{
+          analysisBase64 = await resizeFileToBase64(file, 1100, 0.85);
+        }catch(hiResErr){
+          console.error('High-res analysis copy failed, using storage copy instead', hiResErr);
+        }
+
+        const result = await analyzeAndAutoSave(base64, analysisBase64);
+        if(result) succeeded++; else skipped++;
+      }catch(err){
+        console.error('Skipping file', file.name, err);
+        skipped++;
+        status.textContent = `Skipped "${file.name}" — couldn't read that image.`;
+      }
+    }
+    status.textContent = skipped === 0
+      ? `✓ Added ${succeeded} item${succeeded===1?'':'s'} to your closet`
+      : `✓ Added ${succeeded} item${succeeded===1?'':'s'}, skipped ${skipped} file${skipped===1?'':'s'} that couldn't be read`;
+  }catch(fatalErr){
+    // Should not normally happen (inner errors are caught above), but guarantees the UI never locks up
+    console.error('Batch stopped unexpectedly', fatalErr);
+    status.textContent = 'Something interrupted the batch — you can try adding the rest again.';
+  }finally{
+    batchProcessing = false;
+    currentPhotoBase64 = null;
+    document.getElementById('photoInput').value = '';
+    document.getElementById('cameraInput').value = '';
+    document.getElementById('folderInput').value = '';
+    document.getElementById('photoPreviewWrap').innerHTML = '<div class="hint">Tap to choose photos — Gemini fills in the rest</div>';
+  }
+}
+
+// Calls Gemini on a single photo and returns {category, color, name, occasions}. Throws on any failure.
+async function detectItemFromPhoto(photoBase64, onAttempt){
+  const match = photoBase64.match(/^data:(image\/\w+);base64,(.*)$/);
+  if(!match) throw new Error('Could not read that photo');
+  if(!getApiKey()) throw new Error('No Gemini API key set');
+
+  const promptText = `You are an expert wardrobe cataloger and personal stylist looking closely at a photo of one clothing/accessory item — the same way you would if someone uploaded this photo directly into a Gemini chat and asked "what is this and tell me everything about it."
+
+Look carefully before answering:
+- Zoom into any logos, embroidery, woven or printed labels, care tags, buttons, zippers, buckles, or stitching that might reveal the BRAND or maker. Brand marks are often small — check collars, chest, sleeves, waistbands, soles, and hardware closely. Only state a brand if you can actually identify it with reasonable confidence from a visible mark; if genuinely nothing is visible, use an empty string rather than guessing.
+- Work out the CATEGORY from its shape and construction — pick exactly one: Shirt, T-Shirt, Pants, Shorts, Jacket/Outerwear, Shoes, Watch, Accessory, Other.
+- Note the MATERIAL/fabric if it's visually identifiable (e.g. "cotton twill", "leather", "merino wool knit", "denim") — empty string if not confidently determinable from the photo.
+- Note any DETAILS a knowledgeable person would mention: fit (slim/relaxed/oversized), pattern, notable design features, apparent condition, hardware color, sole type for shoes, movement type for watches, etc. Keep it to a couple of concise sentences.
+- Decide which OCCASIONS this genuinely suits — choose only from: Work, Casual, Date Night, Formal, Gym/Athletic, Travel, Outdoor. Pick 1-3 that truly fit; don't force a match.
+- Note the main COLOR(s).
+- Write a short, specific NAME a person would recognize it by, including the brand if known (e.g. "Patagonia navy quarter-zip pullover", not just "Shirt").
+
+Respond with JSON only, in this exact shape:
+{"category": "...", "occasions": ["..."], "color": "...", "name": "...", "brand": "...", "material": "...", "details": "..."}`;
+
+  let data, usedModel;
+  try{
+    const result = await callGeminiTextWithFallback({
+      contents: [{
+        role: "user",
+        parts: [
+          {text: promptText},
+          {inline_data: {mime_type: match[1], data: match[2]}}
+        ]
+      }],
+      generationConfig: {
+        responseMimeType: "application/json",
+        maxOutputTokens: 1500
+      }
+    }, onAttempt);
+    data = result.data;
+    usedModel = result.modelId;
+  }catch(err){
+    const detail = err && err.message ? `: ${err.message}` : '';
+    throw new Error(`Couldn't reach Gemini${detail}`);
+  }
+
+  const candidate = data.candidates && data.candidates[0];
+  const rawText = candidate && candidate.content && candidate.content.parts && candidate.content.parts.map(p=>p.text||'').join('');
+  if(!rawText) throw new Error('No answer came back');
+
+  let parsed;
+  try{
+    const clean = rawText.replace(/```json|```/g,'').trim();
+    parsed = JSON.parse(clean);
+  }catch(jsonErr){
+    throw new Error("Couldn't parse the answer");
+  }
+
+  parsed.category = normalizeCategory(parsed.category);
+
+  return {
+    category: parsed.category,
+    color: (parsed.color || '').trim(),
+    name: (parsed.name || '').trim() || `${parsed.category} item`,
+    occasions: Array.isArray(parsed.occasions) ? parsed.occasions.filter(o=>OCCASIONS.includes(o)) : [],
+    brand: (parsed.brand || '').trim(),
+    material: (parsed.material || '').trim(),
+    details: (parsed.details || '').trim(),
+    modelUsed: usedModel
+  };
+}
+
+// The item is already pushed to wardrobe + persisted to storage by the time this runs.
+// Any error in here (rendering, DOM lookups, etc.) must never make the add look like it failed.
+function safeRenderAfterAdd(item){
+  try{ renderCloset(); }catch(err){ console.error('renderCloset failed (item was still saved)', err); }
+  try{ addToRecentTable(item); }catch(err){ console.error('addToRecentTable failed (item was still saved)', err); }
+  if(batchTotal <= 1){
+    try{ showDetectedCard(item); }catch(err){ console.error('showDetectedCard failed (item was still saved)', err); }
+  }
+}
+
+async function analyzeAndAutoSave(photoBase64, analysisBase64){
+  const status = document.getElementById('addStatus');
+  const modelInfo = document.getElementById('addModelInfo');
+
+  let fields;
+  try{
+    fields = await detectItemFromPhoto(analysisBase64 || photoBase64, (modelId)=>{
+      const el = document.getElementById('addModelInfo');
+      if(el) el.textContent = `trying ${modelId}...`;
+    });
+  }catch(err){
+    console.error(err);
+    const msg = String(err.message).includes('No Gemini API key set')
+      ? 'Saved — add a Gemini API key in Settings to auto-identify items.'
+      : `${err.message} — added anyway, with no details.`;
+    return await saveFallbackItem(photoBase64, msg);
+  }
+
+  modelInfo.textContent = fields.modelUsed ? `identified using ${fields.modelUsed}` : '';
+
+  const item = {
+    id: 'i_' + Date.now() + Math.random().toString(36).slice(2,7),
+    category: fields.category,
+    color: fields.color,
+    name: fields.name,
+    occasions: fields.occasions,
+    brand: fields.brand || '',
+    material: fields.material || '',
+    notes: fields.details || '',
+    modelUsed: fields.modelUsed || '',
+    photo: photoBase64,
+    added: new Date().toISOString(),
+    modified: new Date().toISOString()
+  };
+
+  wardrobe.push(item);
+  await saveWardrobe();
+  lastAddedItemId = item.id;
+  safeRenderAfterAdd(item);
+  if(batchTotal <= 1){
+    status.textContent = '✓ Added to closet automatically';
+  }
+  return item;
+}
+
+async function saveFallbackItem(photoBase64, message){
+  const status = document.getElementById('addStatus');
+  document.getElementById('addModelInfo').textContent = '';
+  const fallbackItem = {
+    id: 'i_' + Date.now() + Math.random().toString(36).slice(2,7),
+    category: 'Other',
+    color: '',
+    name: `Item added ${new Date().toLocaleDateString()}`,
+    occasions: [],
+    brand: '',
+    material: '',
+    notes: '',
+    photo: photoBase64,
+    added: new Date().toISOString(),
+    modified: new Date().toISOString()
+  };
+  wardrobe.push(fallbackItem);
+  await saveWardrobe();
+  lastAddedItemId = fallbackItem.id;
+  safeRenderAfterAdd(fallbackItem);
+  status.textContent = message;
+  return fallbackItem;
+}
+
+function showDetectedCard(item){
+  document.getElementById('detName').textContent = item.name;
+  const metaBits = [item.category, item.color, item.brand].filter(Boolean);
+  document.getElementById('detMeta').textContent = metaBits.join(' · ');
+  document.getElementById('detOccasions').innerHTML = item.occasions.length
+    ? item.occasions.map(o=>`<div class="chip selected" style="cursor:default;">${escapeHtml(o)}</div>`).join('')
+    : `<div class="chip" style="cursor:default;opacity:0.5;">no occasion tags</div>`;
+  document.getElementById('detectedCard').style.display = 'block';
+  document.getElementById('detailsForm').style.display = 'none';
+}
+
+function openDetailsForm(item){
+  editingExistingId = item ? item.id : null;
+  document.getElementById('fCategory').value = item ? item.category : 'Shirt';
+  document.getElementById('fColor').value = item ? item.color : '';
+  document.getElementById('fName').value = item ? item.name : '';
+  document.getElementById('fBrand').value = item ? (item.brand || '') : '';
+  document.getElementById('fNotes').value = item ? item.notes : '';
+  selectedAddOccasions = new Set(item ? item.occasions : []);
+  document.querySelectorAll('#occasionChips .chip').forEach(c=>{
+    c.classList.toggle('selected', selectedAddOccasions.has(c.dataset.val));
+  });
+  document.getElementById('detectedCard').style.display = 'none';
+  document.getElementById('detailsForm').style.display = 'block';
+}
+
+document.getElementById('fixDetailsBtn').addEventListener('click', ()=>{
+  const item = wardrobe.find(i=>i.id===lastAddedItemId);
+  if(item) openDetailsForm(item);
+});
+
+document.getElementById('occasionChips').addEventListener('click', (e)=>{
+  const chip = e.target.closest('.chip');
+  if(!chip) return;
+  const val = chip.dataset.val;
+  if(selectedAddOccasions.has(val)){ selectedAddOccasions.delete(val); chip.classList.remove('selected'); }
+  else{ selectedAddOccasions.add(val); chip.classList.add('selected'); }
+});
+
+document.getElementById('saveItemBtn').addEventListener('click', async ()=>{
+  const status = document.getElementById('addStatus');
+  const name = document.getElementById('fName').value.trim();
+  if(!name){ status.textContent = 'Give it a short name.'; return; }
+
+  const fields = {
+    category: document.getElementById('fCategory').value,
+    color: document.getElementById('fColor').value.trim(),
+    name,
+    brand: document.getElementById('fBrand').value.trim(),
+    occasions: Array.from(selectedAddOccasions),
+    notes: document.getElementById('fNotes').value.trim()
+  };
+
+  if(editingExistingId){
+    const item = wardrobe.find(i=>i.id===editingExistingId);
+    if(item){ Object.assign(item, fields); item.modified = new Date().toISOString(); }
+  } else {
+    if(!currentPhotoBase64){ status.textContent = 'Add a photo first.'; return; }
+    const now = new Date().toISOString();
+    wardrobe.push({
+      id: 'i_' + Date.now() + Math.random().toString(36).slice(2,7),
+      ...fields,
+      photo: currentPhotoBase64,
+      added: now,
+      modified: now
+    });
+  }
+
+  status.textContent = 'Saving...';
+  await saveWardrobe();
+  status.textContent = '✓ Saved to closet';
+
+  // reset
+  currentPhotoBase64 = null;
+  editingExistingId = null;
+  lastAddedItemId = null;
+  document.getElementById('photoPreviewWrap').innerHTML = '<div class="hint">Tap to choose photos — Gemini fills in the rest</div>';
+  document.getElementById('detailsForm').style.display = 'none';
+  document.getElementById('detectedCard').style.display = 'none';
+  document.getElementById('photoInput').value = '';
+
+  renderCloset();
+  setTimeout(()=>{ status.textContent=''; }, 2500);
+});
+
+// ---------- Closet rendering ----------
+const filterSelect = document.getElementById('filterCategory');
+CATEGORIES.forEach(c=>{
+  const opt = document.createElement('option');
+  opt.value = c; opt.textContent = c;
+  filterSelect.appendChild(opt);
+});
+filterSelect.addEventListener('change', renderCloset);
+
+const sortBySelect = document.getElementById('sortBy');
+const sortOrderSelect = document.getElementById('sortOrder');
+sortBySelect.addEventListener('change', renderCloset);
+sortOrderSelect.addEventListener('change', renderCloset);
+
+function sortItems(items){
+  const by = sortBySelect.value;
+  const dir = sortOrderSelect.value === 'asc' ? 1 : -1;
+
+  const sorted = items.slice().sort((a, b)=>{
+    let av, bv;
+    if(by === 'added' || by === 'modified'){
+      av = new Date(a[by] || a.added || 0).getTime();
+      bv = new Date(b[by] || b.added || 0).getTime();
+      return (av - bv) * dir;
+    }
+    // text fields: case-insensitive, empty values always sink to the bottom regardless of direction
+    av = (a[by] || '').toString().trim().toLowerCase();
+    bv = (b[by] || '').toString().trim().toLowerCase();
+    if(!av && !bv) return 0;
+    if(!av) return 1;
+    if(!bv) return -1;
+    return av.localeCompare(bv) * dir;
+  });
+  return sorted;
+}
+
+function renderCloset(){
+  const grid = document.getElementById('closetGrid');
+  const filter = filterSelect.value;
+  const filtered = filter ? wardrobe.filter(i=>i.category===filter) : wardrobe;
+  const items = sortItems(filtered);
+  document.getElementById('itemCount').textContent = `${wardrobe.length} item${wardrobe.length===1?'':'s'} in closet`;
+
+  if(items.length===0){
+    grid.innerHTML = `<div class="empty" style="grid-column:1/-1;">${wardrobe.length===0 ? 'Your closet is empty — tap Add Item to get started' : 'Nothing in this category yet'}</div>`;
+    return;
+  }
+  grid.innerHTML = items.map(item=>`
+    <div class="item" data-id="${item.id}">
+      <img class="thumb" src="${item.photo}">
+      <button class="item-remove" data-remove="${item.id}">×</button>
+      <div class="tag">
+        <div class="item-name">${escapeHtml(item.name)}</div>
+        <div class="item-meta">${[item.category, item.color, item.brand].filter(Boolean).map(escapeHtml).join(' · ')}</div>
+      </div>
+    </div>
+  `).join('');
+
+  grid.querySelectorAll('[data-remove]').forEach(btn=>{
+    btn.addEventListener('click', async (e)=>{
+      e.stopPropagation();
+      const id = btn.dataset.remove;
+      wardrobe = wardrobe.filter(i=>i.id!==id);
+      await saveWardrobe();
+      renderCloset();
+    });
+  });
+
+  grid.querySelectorAll('.item[data-id]').forEach(card=>{
+    card.addEventListener('click', ()=>{
+      const item = wardrobe.find(i=>i.id===card.dataset.id);
+      if(item) openEditModal(item);
+    });
+  });
+}
+
+function escapeHtml(s){
+  const d = document.createElement('div');
+  d.textContent = s || '';
+  return d.innerHTML;
+}
+
+// ---------- Image lightbox (with zoom + pan) ----------
+const lightboxState = { scale: 1, x: 0, y: 0, minScale: 1, maxScale: 6 };
+let lbDragging = false;
+let lbDragStart = {x:0, y:0, px:0, py:0};
+let lbPointers = new Map(); // active pointers, for pinch-zoom
+let lbPinchStartDist = 0;
+let lbPinchStartScale = 1;
+
+function applyLightboxTransform(){
+  const img = document.getElementById('lightboxImg');
+  img.style.transform = `translate(${lightboxState.x}px, ${lightboxState.y}px) scale(${lightboxState.scale})`;
+  img.style.cursor = lightboxState.scale > 1 ? 'grab' : 'zoom-in';
+}
+
+function resetLightboxZoom(){
+  lightboxState.scale = 1;
+  lightboxState.x = 0;
+  lightboxState.y = 0;
+  applyLightboxTransform();
+}
+
+function clampScale(s){
+  return Math.min(lightboxState.maxScale, Math.max(lightboxState.minScale, s));
+}
+
+function openLightbox(src){
+  if(!src) return;
+  document.getElementById('lightboxImg').src = src;
+  document.getElementById('lightboxOverlay').style.display = 'flex';
+  resetLightboxZoom();
+}
+function closeLightbox(){
+  document.getElementById('lightboxOverlay').style.display = 'none';
+  document.getElementById('lightboxImg').src = '';
+  resetLightboxZoom();
+}
+
+document.getElementById('lightboxCloseBtn').addEventListener('click', closeLightbox);
+document.getElementById('zoomInBtn').addEventListener('click', ()=>{
+  lightboxState.scale = clampScale(lightboxState.scale + 0.5);
+  applyLightboxTransform();
+});
+document.getElementById('zoomOutBtn').addEventListener('click', ()=>{
+  lightboxState.scale = clampScale(lightboxState.scale - 0.5);
+  if(lightboxState.scale <= 1){ lightboxState.x = 0; lightboxState.y = 0; }
+  applyLightboxTransform();
+});
+
+// Click on the dark backdrop (not the image) closes it
+document.getElementById('lightboxOverlay').addEventListener('click', (e)=>{
+  if(e.target.id === 'lightboxOverlay'){ closeLightbox(); }
+});
+
+const lbImg = document.getElementById('lightboxImg');
+
+// Scroll wheel to zoom (desktop)
+lbImg.addEventListener('wheel', (e)=>{
+  e.preventDefault();
+  const delta = e.deltaY > 0 ? -0.25 : 0.25;
+  lightboxState.scale = clampScale(lightboxState.scale + delta);
+  if(lightboxState.scale <= 1){ lightboxState.x = 0; lightboxState.y = 0; }
+  applyLightboxTransform();
+}, {passive:false});
+
+// Double-click / double-tap to toggle zoom
+lbImg.addEventListener('dblclick', (e)=>{
+  e.stopPropagation();
+  if(lightboxState.scale > 1){
+    resetLightboxZoom();
+  }else{
+    lightboxState.scale = 2.5;
+    applyLightboxTransform();
+  }
+});
+
+// Unified pointer-based drag-to-pan + pinch-to-zoom
+lbImg.addEventListener('pointerdown', (e)=>{
+  lbImg.setPointerCapture(e.pointerId);
+  lbPointers.set(e.pointerId, {x:e.clientX, y:e.clientY});
+  if(lbPointers.size === 1){
+    lbDragging = true;
+    lbDragStart = {x:e.clientX, y:e.clientY, px:lightboxState.x, py:lightboxState.y};
+  }else if(lbPointers.size === 2){
+    lbDragging = false;
+    const pts = Array.from(lbPointers.values());
+    lbPinchStartDist = Math.hypot(pts[0].x-pts[1].x, pts[0].y-pts[1].y);
+    lbPinchStartScale = lightboxState.scale;
+  }
+});
+lbImg.addEventListener('pointermove', (e)=>{
+  if(!lbPointers.has(e.pointerId)) return;
+  lbPointers.set(e.pointerId, {x:e.clientX, y:e.clientY});
+
+  if(lbPointers.size === 2){
+    const pts = Array.from(lbPointers.values());
+    const dist = Math.hypot(pts[0].x-pts[1].x, pts[0].y-pts[1].y);
+    if(lbPinchStartDist > 0){
+      lightboxState.scale = clampScale(lbPinchStartScale * (dist / lbPinchStartDist));
+      applyLightboxTransform();
+    }
+  }else if(lbDragging && lightboxState.scale > 1){
+    lightboxState.x = lbDragStart.px + (e.clientX - lbDragStart.x);
+    lightboxState.y = lbDragStart.py + (e.clientY - lbDragStart.y);
+    applyLightboxTransform();
+  }
+});
+function lbPointerEnd(e){
+  lbPointers.delete(e.pointerId);
+  if(lbPointers.size < 2) lbPinchStartDist = 0;
+  if(lbPointers.size === 0) lbDragging = false;
+}
+lbImg.addEventListener('pointerup', lbPointerEnd);
+lbImg.addEventListener('pointercancel', lbPointerEnd);
+lbImg.addEventListener('pointerleave', lbPointerEnd);
+
+// Prevent a plain (non-drag) click on the image itself from bubbling to the backdrop-close handler
+lbImg.addEventListener('click', (e)=> e.stopPropagation());
+
+document.addEventListener('keydown', (e)=>{
+  if(document.getElementById('lightboxOverlay').style.display === 'flex' && e.key === 'Escape'){
+    closeLightbox();
+  }
+});
+
+// ---------- Outfit suggestion ----------
+document.getElementById('occasionPresets').addEventListener('click', (e)=>{
+  const chip = e.target.closest('.chip');
+  if(!chip) return;
+  document.querySelectorAll('#occasionPresets .chip').forEach(c=>c.classList.remove('selected'));
+  chip.classList.add('selected');
+  document.getElementById('occasionInput').value = chip.dataset.val;
+});
+
+document.getElementById('suggestBtn').addEventListener('click', suggestOutfit);
+
+// ---------- Match an item you have a photo of (not in the closet) ----------
+document.getElementById('matchPhotoDrop').addEventListener('click', ()=>document.getElementById('matchLibraryBtn').click());
+document.getElementById('matchLibraryBtn').addEventListener('click', ()=>document.getElementById('matchPhotoInput').click());
+document.getElementById('matchCameraBtn').addEventListener('click', ()=>document.getElementById('matchCameraInput').click());
+document.getElementById('matchPhotoInput').addEventListener('change', (e)=> handleMatchPhoto(e.target.files[0]));
+document.getElementById('matchCameraInput').addEventListener('change', (e)=> handleMatchPhoto(e.target.files[0]));
+
+async function handleMatchPhoto(file){
+  if(!file) return;
+  const status = document.getElementById('matchItemStatus');
+  const modelInfo = document.getElementById('matchModelInfo');
+  document.getElementById('matchDetectedCard').style.display = 'none';
+  matchItemPhoto = null;
+  matchItemFields = null;
+
+  try{
+    const base64 = await resizeFileToBase64(file, 720, 0.82);
+    matchItemPhoto = base64;
+    document.getElementById('matchPhotoPreviewWrap').innerHTML = `<img src="${base64}"><div class="hint">Tap to change photo</div>`;
+  }catch(err){
+    status.textContent = "Couldn't read that photo — try a different one.";
+    return;
+  }
+
+  status.textContent = 'Looking at this item...';
+  try{
+    const fields = await detectItemFromPhoto(matchItemPhoto, (modelId)=>{
+      modelInfo.textContent = `trying ${modelId}...`;
+    });
+    matchItemFields = fields;
+    document.getElementById('matchDetName').textContent = fields.name;
+    document.getElementById('matchDetMeta').textContent = [fields.category, fields.color, fields.brand].filter(Boolean).join(' · ');
+    modelInfo.textContent = fields.modelUsed ? `identified using ${fields.modelUsed}` : '';
+    if(fields.category === 'Other'){
+      status.textContent = '⚠ Could not confidently identify the category — matching may be less precise.';
+    }else{
+      status.textContent = '';
+    }
+    document.getElementById('matchDetectedCard').style.display = 'block';
+  }catch(err){
+    console.error(err);
+    // Still let them proceed with a bare photo even if identification failed —
+    // the stylist call can work from the image description alone in the worst case.
+    matchItemFields = { category: 'Other', color: '', name: 'This item', brand: '', material: '', occasions: [], details: '' };
+    modelInfo.textContent = '';
+    status.textContent = `⚠ Couldn't identify it (${err.message || 'unknown error'}) — matching will be generic. Try again, or a clearer photo.`;
+    document.getElementById('matchDetName').textContent = 'Unidentified item';
+    document.getElementById('matchDetMeta').textContent = '';
+    document.getElementById('matchDetectedCard').style.display = 'block';
+  }
+  document.getElementById('matchPhotoInput').value = '';
+  document.getElementById('matchCameraInput').value = '';
+}
+
+document.getElementById('findMatchBtn').addEventListener('click', suggestOutfitForMatchedItem);
+
+async function suggestOutfitForMatchedItem(){
+  const resultBox = document.getElementById('outfitResult');
+  if(!matchItemPhoto || !matchItemFields){
+    resultBox.innerHTML = `<div class="error-box">Add a photo of the item first.</div>`;
+    return;
+  }
+  if(wardrobe.length === 0){
+    resultBox.innerHTML = `<div class="error-box">Add a few items to your closet first — there's nothing yet to pair this with.</div>`;
+    return;
+  }
+  if(!getApiKey()){
+    resultBox.innerHTML = `<div class="error-box">Add your Gemini API key in the Settings tab first.</div>`;
+    return;
+  }
+
+  const occasionRaw = document.getElementById('occasionInput').value.trim();
+  const occasionLabel = occasionRaw || 'everyday, versatile styling';
+
+  resultBox.innerHTML = `<div class="loading"><div class="spinner"></div> Finding what pairs with this...</div><div id="outfitModelInfo" style="margin-top:6px;font-family:var(--font-tag);font-size:0.65rem;letter-spacing:0.05em;color:var(--paper-dim);opacity:0.65;"></div>`;
+
+  const catalogText = wardrobe.map(i =>
+    `id:${i.id} | category:${i.category} | name:${i.name}${i.brand?' | brand:'+i.brand:''}${i.color?' | color:'+i.color:''}${i.material?' | material:'+i.material:''}${i.occasions.length?' | tags:'+i.occasions.join(','):''}${i.notes?' | notes:'+i.notes.slice(0,140):''}`
+  ).join('\n');
+
+  const refDesc = `category:${matchItemFields.category}${matchItemFields.color?' | color:'+matchItemFields.color:''}${matchItemFields.brand?' | brand:'+matchItemFields.brand:''}${matchItemFields.material?' | material:'+matchItemFields.material:''}${matchItemFields.details?' | details:'+matchItemFields.details:''}`;
+
+  // The reference item already covers its own category, so don't flag that one as missing.
+  const presentCategories = new Set([...wardrobe.map(i=>i.category), matchItemFields.category]);
+  const emptyCategories = CATEGORIES.filter(c => !presentCategories.has(c));
+
+  const promptText = `You are a sharp, practical personal stylist. The user has a piece they're holding or considering — described below — that is NOT part of their existing closet catalog. Your job is to pick complementary items FROM THEIR EXISTING CLOSET CATALOG (by id) that would pair well with this piece, for: ${occasionLabel}.
+
+The piece they're matching against (not in the catalog, do not include it in chosen_ids):
+${refDesc}
+Name: ${matchItemFields.name}
+
+Their closet catalog:
+${catalogText}
+
+Pick a sensible set of complementary items (e.g. if their piece is a top, choose bottom + shoes + maybe outerwear/accessory from the catalog; if it's shoes, choose top + bottom, etc.) using ONLY ids from the catalog. Do not invent items.
+
+IMPORTANT: Do NOT choose any item whose category is "${matchItemFields.category}" — the piece being matched already fills that role, so never suggest another item from the same category as a "match" for it (e.g. if matching a shirt, don't suggest another shirt; if matching shoes, don't suggest another pair of shoes).
+
+Then build missing_items in two passes:
+1. For any standard category still needed to complete the full outfit around this piece (top, bottom, footwear, outerwear if relevant) where the closet has nothing suitable, add a specific short description to missing_items.
+2. The closet currently has ZERO items at all in these categories (not counting the piece being matched): ${emptyCategories.length ? emptyCategories.join(', ') : '(none)'}. For each, decide if something in it would genuinely help complete this specific pairing — if yes, add a specific item description to missing_items.
+
+Only include genuine, specific gaps.
+
+Respond with JSON only, in this exact shape:
+{"chosen_ids": ["id1","id2","id3"], "note": "one short paragraph on why these pair well with the piece, in a warm, direct stylist voice", "missing_items": ["short description of a missing piece", "..."]}`;
+
+  try{
+    const { data, modelId } = await callGeminiTextWithFallback({
+      contents: [{ role: "user", parts: [{text: promptText}] }],
+      generationConfig: { responseMimeType: "application/json", maxOutputTokens: 3000 }
+    }, (attemptModelId)=>{
+      const el = document.getElementById('outfitModelInfo');
+      if(el) el.textContent = `trying ${attemptModelId}...`;
+    });
+
+    const candidate = data.candidates && data.candidates[0];
+    const finishReason = candidate && candidate.finishReason;
+    const rawText = candidate && candidate.content && candidate.content.parts && candidate.content.parts.map(p=>p.text||'').join('');
+    if(!rawText) throw new Error(`No response text${finishReason ? ' (finish reason: '+finishReason+')' : ''}`);
+
+    let parsed;
+    try{
+      const clean = rawText.replace(/```json|```/g,'').trim();
+      parsed = JSON.parse(clean);
+    }catch(parseErr){
+      throw new Error(`Could not parse stylist response${finishReason ? ' (finish reason: '+finishReason+')' : ''}: ${rawText.slice(0,150)}`);
+    }
+
+    const chosenItems = (parsed.chosen_ids || [])
+      .map(id => wardrobe.find(i=>i.id===id))
+      .filter(Boolean)
+      .filter(item => item.category !== matchItemFields.category); // never recommend the same category as the uploaded piece
+    const missingItems = Array.isArray(parsed.missing_items) ? parsed.missing_items.filter(Boolean) : [];
+
+    resultBox.innerHTML = `
+      <div class="outfit-occasion-label">Matching your photo</div>
+      <div class="board" style="grid-template-columns:130px;margin-bottom:16px;">
+        <div class="item">
+          <img class="thumb" src="${matchItemPhoto}" style="cursor:zoom-in;" data-lightbox="ref">
+          <div class="tag">
+            <div class="item-name">${escapeHtml(matchItemFields.name)}</div>
+            <div class="item-meta">Your photo</div>
+          </div>
+        </div>
+      </div>
+      ${chosenItems.length ? `
+        <div class="item-meta" style="margin-bottom:8px;">Pair it with, from your closet</div>
+        <div class="board">
+          ${chosenItems.map(item=>`
+            <div class="item">
+              <img class="thumb" src="${item.photo}" style="cursor:zoom-in;" data-lightbox="${item.id}">
+              <div class="tag">
+                <div class="item-name">${escapeHtml(item.name)}</div>
+                <div class="item-meta">${escapeHtml(item.category)}</div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      ` : `<div class="error-box">Nothing in your closet pairs well with this yet — see suggestions below.</div>`}
+      <div class="why">${escapeHtml(parsed.note || '')}</div>
+      <div style="margin-top:8px;font-family:var(--font-tag);font-size:0.65rem;letter-spacing:0.05em;color:var(--paper-dim);opacity:0.65;">picked using ${escapeHtml(modelId)}</div>
+      <div id="outfitPreviewWrap" style="margin-top:18px;"></div>
+      <div id="missingItemsWrap" style="margin-top:18px;"></div>
+    `;
+
+    resultBox.querySelectorAll('.board img[data-lightbox]').forEach(img=>{
+      img.addEventListener('click', ()=> openLightbox(img.src));
+    });
+
+    const referencePseudoItem = { photo: matchItemPhoto, name: matchItemFields.name, category: matchItemFields.category };
+    generateOutfitPreviewImage([referencePseudoItem, ...chosenItems], occasionLabel);
+
+    if(missingItems.length){
+      suggestMissingItemsFromWeb(missingItems, occasionLabel);
+    }else{
+      const mwrap = document.getElementById('missingItemsWrap');
+      if(mwrap) mwrap.innerHTML = `<div style="font-family:var(--font-tag);font-size:0.65rem;letter-spacing:0.05em;color:var(--paper-dim);opacity:0.5;">✓ your closet covers this pairing — nothing missing</div>`;
+    }
+  }catch(err){
+    console.error(err);
+    resultBox.innerHTML = `<div class="error-box">Couldn't get a match: ${escapeHtml(err.message || 'unknown error')}</div>`;
+  }
+}
+
+async function suggestOutfit(){
+  const occasion = document.getElementById('occasionInput').value.trim();
+  const resultBox = document.getElementById('outfitResult');
+
+  if(!occasion){
+    resultBox.innerHTML = `<div class="error-box">Tell me the occasion first.</div>`;
+    return;
+  }
+  if(wardrobe.length < 2){
+    resultBox.innerHTML = `<div class="error-box">Add a few items to your closet first — you need at least a couple of pieces to build an outfit.</div>`;
+    return;
+  }
+
+  resultBox.innerHTML = `<div class="loading"><div class="spinner"></div> Putting together an outfit for "${escapeHtml(occasion)}"...</div><div id="outfitModelInfo" style="margin-top:6px;font-family:var(--font-tag);font-size:0.65rem;letter-spacing:0.05em;color:var(--paper-dim);opacity:0.65;"></div>`;
+
+  if(!getApiKey()){
+    resultBox.innerHTML = `<div class="error-box">Add your Gemini API key in the Settings tab first.</div>`;
+    return;
+  }
+
+  const catalogText = wardrobe.map(i =>
+    `id:${i.id} | category:${i.category} | name:${i.name}${i.brand?' | brand:'+i.brand:''}${i.color?' | color:'+i.color:''}${i.material?' | material:'+i.material:''}${i.occasions.length?' | tags:'+i.occasions.join(','):''}${i.notes?' | notes:'+i.notes.slice(0,140):''}`
+  ).join('\n');
+
+  // Determined client-side, not left to the model to guess: which of the closet's
+  // own categories currently have zero items at all.
+  const presentCategories = new Set(wardrobe.map(i=>i.category));
+  const emptyCategories = CATEGORIES.filter(c => !presentCategories.has(c));
+
+  const promptText = `You are a sharp, practical personal stylist. You will be given a catalog of the user's actual wardrobe items (with ids, categories, names, colors, brands, materials, occasion tags, and notes), then an occasion. Pick ONE complete outfit using ONLY items from the catalog by their ids — choose a sensible combination (e.g. top + bottom + shoes, plus outerwear/watch/accessory if it fits and if suitable items exist), reasoning from the catalog details (color, material, formality tags) rather than seeing photos directly. Do not invent items that aren't in the catalog.
+
+Then build missing_items in two passes:
+1. For each standard category this occasion calls for (top, bottom or dress, footwear, and outerwear if weather/formality calls for it): does the closet have something that's actually a good fit for THIS occasion in that category — not just any item, but one appropriate enough in formality/warmth/style? If you had to omit the category entirely, or substitute something noticeably wrong (e.g. sneakers standing in for dress shoes at a formal event, a t-shirt for a black-tie occasion, nothing warm enough for winter), add a specific short description of the missing piece to missing_items.
+2. The closet currently has ZERO items at all in these categories: ${emptyCategories.length ? emptyCategories.join(', ') : '(none — every category has at least one item)'}. For each of those categories, decide honestly whether something in it would genuinely help complete or elevate THIS SPECIFIC outfit for THIS occasion (e.g. a belt or watch for a polished look, a tie or pocket square for formal, a scarf or bag for cold/travel) — if yes, add a specific suggested item to missing_items (not "an accessory" — say what kind, e.g. "a brown leather belt" or "a silk pocket square"). If a category genuinely wouldn't add anything for this occasion, skip it.
+
+Only include genuine, specific gaps — don't pad missing_items just to have entries in it.
+
+Occasion: ${occasion}
+
+Wardrobe catalog:
+${catalogText}
+
+Respond with JSON only, in this exact shape:
+{"chosen_ids": ["id1","id2","id3"], "note": "one short paragraph explaining why this combination works for the occasion, in a warm, direct stylist voice", "missing_items": ["short description of a missing piece", "..."]}`;
+
+  try{
+    const { data, modelId } = await callGeminiTextWithFallback({
+      contents: [{
+        role: "user",
+        parts: [{text: promptText}]
+      }],
+      generationConfig: {
+        responseMimeType: "application/json",
+        maxOutputTokens: 3000
+      }
+    }, (attemptModelId)=>{
+      const el = document.getElementById('outfitModelInfo');
+      if(el) el.textContent = `trying ${attemptModelId}...`;
+    });
+
+    const candidate = data.candidates && data.candidates[0];
+    const finishReason = candidate && candidate.finishReason;
+    const rawText = candidate && candidate.content && candidate.content.parts && candidate.content.parts.map(p=>p.text||'').join('');
+    if(!rawText){
+      throw new Error(`No response text${finishReason ? ' (finish reason: '+finishReason+')' : ''}`);
+    }
+
+    let parsed;
+    try{
+      const clean = rawText.replace(/```json|```/g,'').trim();
+      parsed = JSON.parse(clean);
+    }catch(parseErr){
+      throw new Error(`Could not parse stylist response${finishReason ? ' (finish reason: '+finishReason+')' : ''}: ${rawText.slice(0,150)}`);
+    }
+
+    const chosenItems = (parsed.chosen_ids || []).map(id => wardrobe.find(i=>i.id===id)).filter(Boolean);
+    const missingItems = Array.isArray(parsed.missing_items) ? parsed.missing_items.filter(Boolean) : [];
+
+    if(chosenItems.length===0 && missingItems.length===0){
+      resultBox.innerHTML = `<div class="error-box">Couldn't put together an outfit from the current closet for this occasion — try adding more items, or a different occasion.</div>`;
+      return;
+    }
+
+    resultBox.innerHTML = `
+      <div class="outfit-occasion-label">${escapeHtml(occasion)}</div>
+      ${chosenItems.length ? `
+      <div class="board">
+        ${chosenItems.map(item=>`
+          <div class="item">
+            <img class="thumb" src="${item.photo}" style="cursor:zoom-in;" data-lightbox="${item.id}">
+            <div class="tag">
+              <div class="item-name">${escapeHtml(item.name)}</div>
+              <div class="item-meta">${escapeHtml(item.category)}</div>
+            </div>
+          </div>
+        `).join('')}
+      </div>` : `<div class="error-box">Nothing in your closet fits this occasion yet — see suggestions below.</div>`}
+      <div class="why">${escapeHtml(parsed.note || '')}</div>
+      <div style="margin-top:8px;font-family:var(--font-tag);font-size:0.65rem;letter-spacing:0.05em;color:var(--paper-dim);opacity:0.65;">picked using ${escapeHtml(modelId)}</div>
+      <div id="outfitPreviewWrap" style="margin-top:18px;"></div>
+      <div id="missingItemsWrap" style="margin-top:18px;"></div>
+    `;
+
+    resultBox.querySelectorAll('.board img[data-lightbox]').forEach(img=>{
+      img.addEventListener('click', ()=> openLightbox(img.src));
+    });
+
+    console.log('[My Stylist] missing_items from stylist:', missingItems);
+
+    if(chosenItems.length){
+      generateOutfitPreviewImage(chosenItems, occasion);
+    }
+    if(missingItems.length){
+      suggestMissingItemsFromWeb(missingItems, occasion);
+    }else{
+      const mwrap = document.getElementById('missingItemsWrap');
+      if(mwrap) mwrap.innerHTML = `<div style="font-family:var(--font-tag);font-size:0.65rem;letter-spacing:0.05em;color:var(--paper-dim);opacity:0.5;">✓ your closet covers this occasion — nothing missing</div>`;
+    }
+  }catch(err){
+    console.error(err);
+    resultBox.innerHTML = `<div class="error-box">Couldn't get a suggestion: ${escapeHtml(err.message || 'unknown error')}</div>`;
+  }
+}
+
+// When the closet is missing something for the occasion, search the web for a few
+// real, currently-available suggestions rather than just saying "you don't have this."
+async function suggestMissingItemsFromWeb(missingItems, occasion){
+  const wrap = document.getElementById('missingItemsWrap');
+  if(!wrap) return;
+
+  wrap.innerHTML = `
+    <div class="item-meta" style="margin-bottom:8px;">Your closet doesn't have this yet</div>
+    <div class="loading"><div class="spinner"></div> Looking for suggestions online...</div>
+  `;
+
+  const list = missingItems.map(m=>`- ${m}`).join('\n');
+  const promptText = `The user needs these items for "${occasion}" but doesn't own them yet:
+${list}
+
+For each one, use web search to suggest 1-2 specific, currently purchasable products (real brand + product name, and an approximate price if you can find one). Keep each suggestion to one short line. Write it as a plain, scannable list grouped by item, no preamble or closing remarks — just the list.`;
+
+  try{
+    const modelId = GEMINI_TEXT_MODEL_CANDIDATES[0];
+    const response = await fetch(geminiUrl(modelId), {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({
+        contents: [{ role: "user", parts: [{text: promptText}] }],
+        tools: [{ google_search: {} }]
+      })
+    });
+
+    const data = await response.json();
+    if(!response.ok || data.error){
+      const msg = (data && data.error && data.error.message) ? data.error.message : `HTTP ${response.status}`;
+      throw new Error(msg);
+    }
+
+    const candidate = data.candidates && data.candidates[0];
+    const text = candidate && candidate.content && candidate.content.parts
+      ? candidate.content.parts.map(p=>p.text||'').join('\n').trim()
+      : '';
+
+    // Pull any grounded citation links Gemini's web search actually used
+    const chunks = (candidate && candidate.groundingMetadata && candidate.groundingMetadata.groundingChunks) || [];
+    const links = chunks
+      .map(c => c.web && c.web.uri ? {title: c.web.title || c.web.uri, uri: c.web.uri} : null)
+      .filter(Boolean)
+      .filter((l, i, arr) => arr.findIndex(x=>x.uri===l.uri) === i) // de-dupe
+      .slice(0, 6);
+
+    if(!text && links.length===0){
+      wrap.innerHTML = `<div class="item-meta" style="margin-bottom:8px;">Your closet doesn't have this yet</div><div class="why">Consider adding: ${escapeHtml(missingItems.join(', '))}</div>`;
+      return;
+    }
+
+    wrap.innerHTML = `
+      <div class="item-meta" style="margin-bottom:8px;">Your closet doesn't have this yet — found online</div>
+      <div class="why" style="white-space:pre-line;">${escapeHtml(text)}</div>
+      ${links.length ? `
+        <div style="margin-top:10px;display:flex;flex-direction:column;gap:6px;">
+          ${links.map(l=>`<a href="${l.uri}" target="_blank" rel="noopener" style="color:var(--brass-bright);font-size:0.82rem;text-decoration:none;border-bottom:1px solid var(--line);padding-bottom:4px;">${escapeHtml(l.title)} ↗</a>`).join('')}
+        </div>
+      ` : ''}
+    `;
+  }catch(err){
+    console.error('Web suggestion failed', err);
+    wrap.innerHTML = `
+      <div class="item-meta" style="margin-bottom:8px;">Your closet doesn't have this yet</div>
+      <div class="why">Consider adding: ${escapeHtml(missingItems.join(', '))} (couldn't fetch live suggestions: ${escapeHtml(err.message || 'unknown error')})</div>
+    `;
+  }
+}
+
+async function generateOutfitPreviewImage(chosenItems, occasion){
+  const wrap = document.getElementById('outfitPreviewWrap');
+  if(!wrap) return;
+
+  const myPhoto = await getMyPhoto();
+  if(!myPhoto){
+    wrap.innerHTML = `<div class="why">Add your photo in Settings to see yourself wearing this look.</div>`;
+    return;
+  }
+
+  wrap.innerHTML = `<div class="loading"><div class="spinner"></div> Generating a picture of you wearing this...</div>`;
+
+  const myMatch = myPhoto.match(/^data:(image\/\w+);base64,(.*)$/);
+  const itemParts = chosenItems.flatMap(item=>{
+    const m = item.photo.match(/^data:(image\/\w+);base64,(.*)$/);
+    if(!m) return [];
+    return [
+      {text:`Reference photo of the ${item.category.toLowerCase()}: "${item.name}"${item.color ? ' ('+item.color+')' : ''}`},
+      {inline_data:{mime_type: m[1], data: m[2]}}
+    ];
+  });
+
+  if(!myMatch || itemParts.length===0){
+    wrap.innerHTML = '';
+    return;
+  }
+
+  const promptText = `You are given a reference photo of a person, followed by reference photos of individual clothing/accessory items. Generate a single new photorealistic image of that same person wearing this exact combination of items together, styled appropriately for: ${occasion}. Keep the person's face, body type, and identity consistent with their reference photo. Show a natural full-body or three-quarter pose with realistic lighting, as if it were a real photo of them dressed for the occasion. Do not add any items that weren't shown in the reference photos.`;
+
+  const requestBody = {
+    contents: [{
+      role: "user",
+      parts: [
+        {text: promptText},
+        {text: "Reference photo of the person:"},
+        {inline_data:{mime_type: myMatch[1], data: myMatch[2]}},
+        ...itemParts
+      ]
+    }],
+    generationConfig: {
+      responseModalities: ["TEXT","IMAGE"]
+    }
+  };
+
+  let lastError = null;
+
+  for(const modelId of await discoverImageModels()){
+    try{
+      const response = await fetch(geminiImageUrl(modelId), {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify(requestBody)
+      });
+
+      const data = await response.json();
+
+      if(!response.ok || data.error){
+        const msg = (data && data.error && data.error.message) ? data.error.message : `HTTP ${response.status}`;
+        // Model not available on this key/tier — try the next candidate rather than giving up
+        if(response.status === 404 || /not found|not supported/i.test(msg)){
+          lastError = new Error(`${modelId}: ${msg}`);
+          continue;
+        }
+        throw new Error(`${modelId}: ${msg}`);
+      }
+
+      const candidate = data.candidates && data.candidates[0];
+      const finishReason = candidate && candidate.finishReason;
+      const parts = (candidate && candidate.content && candidate.content.parts) || [];
+      const imagePart = parts.find(p => p.inlineData || p.inline_data);
+      const inline = imagePart && (imagePart.inlineData || imagePart.inline_data);
+
+      if(!inline || !inline.data){
+        const textPart = parts.find(p=>p.text);
+        const detail = finishReason ? ` (${finishReason})` : '';
+        throw new Error(`${modelId}: no image returned${detail}${textPart ? ' — ' + textPart.text.slice(0,150) : ''}`);
+      }
+
+      const mime = inline.mimeType || inline.mime_type || 'image/png';
+      const previewSrc = `data:${mime};base64,${inline.data}`;
+      wrap.innerHTML = `
+        <div class="item-meta" style="margin-bottom:8px;">You, styled for this occasion</div>
+        <img id="outfitPreviewImg" src="${previewSrc}" style="width:100%;border-radius:4px;border:1px solid var(--line);cursor:zoom-in;">
+        <div style="margin-top:8px;font-family:var(--font-tag);font-size:0.65rem;letter-spacing:0.05em;color:var(--paper-dim);opacity:0.65;">generated using ${escapeHtml(modelId)}</div>
+      `;
+      document.getElementById('outfitPreviewImg').addEventListener('click', ()=> openLightbox(previewSrc));
+      return;
+    }catch(err){
+      console.error(`Outfit preview image failed with ${modelId}`, err);
+      lastError = err;
+    }
+  }
+
+  // All candidates failed — show the real reason so it's diagnosable instead of a dead end
+  wrap.innerHTML = `<div class="why">Couldn't generate a preview picture: ${escapeHtml(lastError ? lastError.message : 'unknown error')} — the outfit above is still good to go.</div>`;
+}
+
+// ---------- Edit item modal ----------
+let editingItemId = null;
+let editSelectedOccasions = new Set();
+
+document.getElementById('editPhoto').addEventListener('click', (e)=>{
+  e.stopPropagation();
+  openLightbox(e.target.src);
+});
+
+function openEditModal(item){
+  editingItemId = item.id;
+  document.getElementById('editPhoto').src = item.photo;
+  document.getElementById('eCategory').value = CATEGORIES.includes(item.category) ? item.category : 'Other';
+  document.getElementById('eColor').value = item.color || '';
+  document.getElementById('eName').value = item.name || '';
+  document.getElementById('eBrand').value = item.brand || '';
+  document.getElementById('eNotes').value = item.notes || '';
+  editSelectedOccasions = new Set(item.occasions || []);
+  document.querySelectorAll('#eOccasionChips .chip').forEach(c=>{
+    c.classList.toggle('selected', editSelectedOccasions.has(c.dataset.val));
+  });
+  document.getElementById('editStatus').textContent = '';
+  document.getElementById('editModelInfo').textContent = '';
+  document.getElementById('editModalOverlay').style.display = 'flex';
+}
+
+function closeEditModal(){
+  editingItemId = null;
+  document.getElementById('editModalOverlay').style.display = 'none';
+}
+
+document.getElementById('closeEditModalBtn').addEventListener('click', closeEditModal);
+document.getElementById('editModalOverlay').addEventListener('click', (e)=>{
+  if(e.target.id === 'editModalOverlay') closeEditModal();
+});
+
+document.getElementById('reanalyzeBtn').addEventListener('click', async ()=>{
+  if(!editingItemId) return;
+  const item = wardrobe.find(i=>i.id===editingItemId);
+  if(!item) return;
+
+  const status = document.getElementById('editStatus');
+  const modelInfo = document.getElementById('editModelInfo');
+  const btn = document.getElementById('reanalyzeBtn');
+  btn.disabled = true;
+  status.textContent = 'Asking Gemini to take another look...';
+  modelInfo.textContent = '';
+
+  try{
+    // Note: this re-analyzes the already-stored (smaller) photo, since the original
+    // full-resolution file isn't kept around — results may be less detailed than a fresh upload.
+    const fields = await detectItemFromPhoto(item.photo, (modelId)=>{
+      modelInfo.textContent = `trying ${modelId}...`;
+    });
+    document.getElementById('eCategory').value = fields.category;
+    document.getElementById('eColor').value = fields.color;
+    document.getElementById('eName').value = fields.name;
+    document.getElementById('eBrand').value = fields.brand || '';
+    if(fields.details) document.getElementById('eNotes').value = fields.details;
+    editSelectedOccasions = new Set(fields.occasions);
+    document.querySelectorAll('#eOccasionChips .chip').forEach(c=>{
+      c.classList.toggle('selected', editSelectedOccasions.has(c.dataset.val));
+    });
+    status.textContent = '✓ Fields updated — review and Save changes to keep them';
+    modelInfo.textContent = fields.modelUsed ? `identified using ${fields.modelUsed}` : '';
+  }catch(err){
+    console.error(err);
+    status.textContent = `${err.message || 'Something went wrong'} — nothing changed.`;
+    modelInfo.textContent = '';
+  }finally{
+    btn.disabled = false;
+  }
+});
+
+document.getElementById('eOccasionChips').addEventListener('click', (e)=>{
+  const chip = e.target.closest('.chip');
+  if(!chip) return;
+  const val = chip.dataset.val;
+  if(editSelectedOccasions.has(val)){ editSelectedOccasions.delete(val); chip.classList.remove('selected'); }
+  else{ editSelectedOccasions.add(val); chip.classList.add('selected'); }
+});
+
+document.getElementById('saveEditBtn').addEventListener('click', async ()=>{
+  if(!editingItemId) return;
+  const status = document.getElementById('editStatus');
+  const name = document.getElementById('eName').value.trim();
+  if(!name){ status.textContent = 'Give it a short name.'; return; }
+
+  const item = wardrobe.find(i=>i.id===editingItemId);
+  if(!item){ closeEditModal(); return; }
+
+  item.category = document.getElementById('eCategory').value;
+  item.color = document.getElementById('eColor').value.trim();
+  item.name = name;
+  item.brand = document.getElementById('eBrand').value.trim();
+  item.notes = document.getElementById('eNotes').value.trim();
+  item.occasions = Array.from(editSelectedOccasions);
+  item.modified = new Date().toISOString();
+
+  status.textContent = 'Saving...';
+  await saveWardrobe();
+  renderCloset();
+  closeEditModal();
+});
+
+document.getElementById('deleteEditBtn').addEventListener('click', async ()=>{
+  if(!editingItemId) return;
+  if(!confirm('Remove this item from your closet?')) return;
+  wardrobe = wardrobe.filter(i=>i.id!==editingItemId);
+  await saveWardrobe();
+  renderCloset();
+  closeEditModal();
+});
+
+// ---------- Export / Import backup ----------
+document.getElementById('exportBtn').addEventListener('click', ()=>{
+  const status = document.getElementById('exportStatus');
+  if(wardrobe.length===0){ status.textContent = 'Nothing to export yet.'; return; }
+  const payload = {
+    app: 'my-stylist',
+    exportedAt: new Date().toISOString(),
+    itemCount: wardrobe.length,
+    items: wardrobe
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const dateStr = new Date().toISOString().slice(0,10);
+  a.href = url;
+  a.download = `my-stylist-backup-${dateStr}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  status.textContent = `✓ Exported ${wardrobe.length} item${wardrobe.length===1?'':'s'}`;
+});
+
+document.getElementById('importBtn').addEventListener('click', ()=>{
+  const status = document.getElementById('importStatus');
+  const fileInput = document.getElementById('importFileInput');
+  const file = fileInput.files[0];
+  if(!file){ status.textContent = 'Choose a backup file first.'; return; }
+
+  const reader = new FileReader();
+  reader.onload = async (ev)=>{
+    let parsed;
+    try{
+      parsed = JSON.parse(ev.target.result);
+    }catch(err){
+      status.textContent = "That file doesn't look like a valid closet backup.";
+      return;
+    }
+
+    const incoming = Array.isArray(parsed) ? parsed : Array.isArray(parsed.items) ? parsed.items : null;
+    if(!incoming){
+      status.textContent = "Couldn't find any items in that file.";
+      return;
+    }
+
+    const existingIds = new Set(wardrobe.map(i=>i.id));
+    let added = 0, skipped = 0;
+    incoming.forEach(raw=>{
+      if(!raw || !raw.photo){ skipped++; return; }
+      const id = raw.id && !existingIds.has(raw.id) ? raw.id : 'i_' + Date.now() + Math.random().toString(36).slice(2,7);
+      existingIds.add(id);
+      // Spread every field from the source item first (brand, material, modelUsed, notes, color,
+      // name, photo, and anything added in the future) so nothing gets silently dropped on import —
+      // then only override the handful of fields that need validation or regeneration.
+      wardrobe.push({
+        ...raw,
+        id,
+        name: raw.name || 'Imported item',
+        category: CATEGORIES.includes(raw.category) ? raw.category : 'Other',
+        occasions: Array.isArray(raw.occasions) ? raw.occasions.filter(o=>OCCASIONS.includes(o)) : [],
+        added: raw.added || new Date().toISOString(),
+        modified: raw.modified || raw.added || new Date().toISOString()
+      });
+      added++;
+    });
+
+    await saveWardrobe();
+    renderCloset();
+    status.textContent = `✓ Imported ${added} item${added===1?'':'s'}${skipped ? `, skipped ${skipped} invalid entr${skipped===1?'y':'ies'}` : ''}`;
+    fileInput.value = '';
+  };
+  reader.readAsText(file);
+});
+
+// ---------- Init ----------
+loadWardrobe();
+
+// Register service worker for offline app-shell loading (installable PWA)
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js').catch(err=>{
+      console.error('Service worker registration failed', err);
+    });
+  });
+}
+</script>
+</body>
+</html>
